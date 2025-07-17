@@ -4,10 +4,11 @@ This README describes how to set up two Jetstream2 CXL-Emulator hosts and connec
 
 ## 1. 
 - Jetstream2 account with at least **2 running cxl_emu instances** (e.g. `cxl_emu_1-of-4` and `cxl_emu_2-of-4`).  
-- SSH access to each instance as `exouser`:
-'''
+- SSH access to each instance as `exouser` on your terminal:
+```
 ssh exouser@IP_ADDRESS_OF_INSTANCE
-'''
+```
+- enter the password for exouser when prompted
 
 - `qemu_images/` directory on each host containing:
   - `emucxl.qcow2` (nested-VM disk)
