@@ -35,8 +35,54 @@ sudo qemu-system-x86_64 -name emucxlVM \
 -nographic
 ```
 - This will Forward host port 8080→VM SSH
-
-- Listen on TCP/5555 for your peer cxl_emu_2
-
+- Listen on TCP/5555 for peer cxl_emu_2 which will be our conector
 - Expose two separate virtio‑net devices (one for management, one for cross‑host).
+
+- Now for cxl_emu_2 we need to change its start_vm.sh so it can be a connector:
+```
+//cxl_emu_2 start_vm.sh
+#! /bin/bash
+
+TOTAL_MEMORY=16384
+
+sudo qemu-system-x86_64 -name emucxlVM \
+  -machine type=pc,accel=kvm,mem-merge=off -enable-kvm \
+  -cpu host -smp cpus=4 -m ${TOTAL_MEMORY}M \
+  -device virtio-scsi-pci,id=scsi0 \
+  -device scsi-hd,drive=hd0 \
+  -drive file=/home/exouser/qemu_images/emucxl.qcow2,if=none,aio=native,cache=none,format=qcow2,id=hd0 \
+  -netdev user,id=mng,hostfwd=tcp::8081-:22 \
+  -device virtio-net-pci,netdev=mng,mac=52:54:00:AA:BB:03 \
+  -netdev socket,id=cross,connect=149.165.175.123:5555 \
+  -device virtio-net-pci,netdev=cross,mac=52:54:00:AA:BB:04 \
+  -nographic
+```
+- Once both start_vm.sh are configured, we are ready to run the start_vm.
+## 2. Link set up
+- Run start_vm.sh in both cxl_emu_1 and cxl_emu_2 by typing the following command into their terminal:
+```
+bash start_vm.shh
+```
+- Now this should prompt you to a login command line, enter your username and password. Ex(username jack, password ...)
+- Once logged in, in nested VM-A(or cxl_emu_1) enter the following command:
+```
+sudo ip link set dev ens5 up
+sudo ip addr add 10.1.1.1/24 dev ens5
+```
+- Now in nested VM-B(or cxl_emu_2) enter the following command:
+```
+sudo ip link set dev ens5 up
+sudo ip addr add 10.1.1.2/24 dev ens5
+```
+- Now the link set up is done.
+
+## 3. Test connectivity
+- Now to test the connectivity simply do this:
+```
+ping -c4 10.1.1.2   # from A
+ping -c4 10.1.1.1   # from B
+```
+- then you should see sucessfull packet transmission on both ends.
+
+
 
